@@ -1,0 +1,21 @@
+# Dependências
+node_modules/
+.pnpm-store/
+
+# Builds
+dist/
+static-build/
+*.tsbuildinfo
+
+# Expo
+.expo/
+.expo-shared/
+
+# Variáveis de ambiente (nunca commitar segredos)
+.env
+.env.local
+.env.*.local
+
+# Sistema
+.DS_Store
+*.log
