@@ -3,7 +3,7 @@ services:
     name: controle-financeiro-api
     runtime: node
     plan: free
-    buildCommand: pnpm install && pnpm --filter @workspace/api-server run build
+    buildCommand: pnpm install --no-frozen-lockfile && pnpm --filter @workspace/api-server run build
     startCommand: pnpm --filter @workspace/api-server run start
     envVars:
       - key: NODE_ENV
@@ -18,7 +18,7 @@ services:
   - type: web
     runtime: static
     name: controle-financeiro-app
-    buildCommand: pnpm install && export EXPO_PUBLIC_API_URL="https://${API_HOST}/api" && pnpm --filter @workspace/controle-financeiro exec expo export --platform web --output-dir static-build/web
+    buildCommand: pnpm install --no-frozen-lockfile && export EXPO_PUBLIC_API_URL="https://${API_HOST}/api" && pnpm --filter @workspace/controle-financeiro exec expo export --platform web --output-dir static-build/web
     staticPublishPath: artifacts/controle-financeiro/static-build/web
     envVars:
       - key: API_HOST
