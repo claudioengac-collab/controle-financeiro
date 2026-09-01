@@ -7,6 +7,13 @@ export function getApiBase(): string {
     return process.env.EXPO_PUBLIC_API_URL;
   }
 
+  // 🆕 Reforço: se o app estiver rodando no Render, usa o endereço direto e
+  // confiável da API, sem depender de nenhuma variável de ambiente ter
+  // "colado" certo durante o build. Evita ficar refém desse detalhe.
+  if (typeof window !== "undefined" && window?.location?.hostname?.includes("onrender.com")) {
+    return "https://controle-financeiro-api-wxls.onrender.com/api";
+  }
+
   // Esquema antigo, específico do Replit (mantido pra quem ainda testa por lá)
   if (typeof window !== "undefined" && window?.location?.hostname) {
     const root = window.location.hostname.includes(".expo.")
