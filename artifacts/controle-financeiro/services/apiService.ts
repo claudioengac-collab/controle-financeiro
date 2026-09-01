@@ -28,11 +28,14 @@ export function getApiBase(): string {
 async function req<T = any>(
   method: string,
   path: string,
-  body?: unknown
+  body?: unknown,
+  tentativa: number = 0
 ): Promise<T> {
   const url = `${getApiBase()}${path}`;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
+  // 🆕 60s em vez de 15s — o plano grátis do Render pode levar mais de 25s
+  // pra "acordar" o servidor quando ele está dormindo.
+  const timeout = setTimeout(() => controller.abort(), 60000);
 
   try {
     const res = await fetch(url, {
@@ -41,6 +44,18 @@ async function req<T = any>(
       body: body !== undefined ? JSON.stringify(body) : undefined,
       signal: controller.signal,
     });
+
+    // 🆕 Enquanto o servidor está "acordando", o Render devolve uma
+    // página de carregamento (HTML), não o JSON esperado. Detecta isso
+    // e tenta de novo automaticamente, em vez de mostrar erro pro usuário.
+    const contentType = res.headers.get("content-type") ?? "";
+    if (!contentType.includes("application/json")) {
+      if (tentativa < 3) {
+        await new Promise((r) => setTimeout(r, 6000));
+        return req<T>(method, path, body, tentativa + 1);
+      }
+      throw new Error("O servidor ainda está iniciando. Tente novamente em instantes.");
+    }
 
     if (!res.ok) {
       const detalhe = await res.text();
