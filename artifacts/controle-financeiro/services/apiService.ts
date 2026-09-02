@@ -1,11 +1,8 @@
 // URL base da API — funciona em web, Android e iPhone
 export function getApiBase(): string {
-  // 🆕 No Render, a própria página repassa (proxy) /api/* pro servidor de
-  // verdade — configurado direto no render.yaml. Por isso um caminho
-  // relativo já basta: nunca "cruza" pra outro site, então não tem como
-  // dar problema de conexão entre domínios diferentes.
+  // No Render, usa o endereço direto e confiável da API.
   if (typeof window !== "undefined" && window?.location?.hostname?.includes("onrender.com")) {
-    return "/api";
+    return "https://controle-financeiro-api-wxls.onrender.com/api";
   }
 
   // Fora do Render (ex.: rodando localmente), ainda dá pra forçar um
