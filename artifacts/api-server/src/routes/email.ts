@@ -3,7 +3,14 @@ import { Resend } from "resend";
 
 const router = Router();
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// 🆕 Não cria o cliente do Resend aqui em cima (nível do módulo) — se a
+// chave estiver ausente, isso derrubaria o servidor inteiro assim que ele
+// iniciasse, quebrando login, lançamentos, tudo. Em vez disso, cria só na
+// hora de usar, dentro da rota, com uma verificação segura antes.
+function getResendClient(): Resend | null {
+  if (!process.env.RESEND_API_KEY) return null;
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 // 🆕 Sem domínio próprio verificado no Resend, só dá pra mandar pro
 // e-mail usado pra criar a conta no Resend. Deixe esse único endereço aqui.
@@ -49,6 +56,12 @@ router.post("/email/notificar", async (req, res) => {
         </div>
       </div>
     `;
+
+    const resend = getResendClient();
+    if (!resend) {
+      console.error("Erro ao enviar e-mail: RESEND_API_KEY não configurada");
+      return res.status(500).json({ ok: false, erro: "RESEND_API_KEY não configurada no servidor" });
+    }
 
     // 🆕 Resend em vez de SMTP/nodemailer — o Render bloqueia conexões
     // SMTP tradicionais no plano grátis, mas isso aqui funciona por HTTPS,

@@ -81,18 +81,34 @@ router.post("/lancamentos", async (req, res) => {
   const items: any[] = req.body;
   if (!Array.isArray(items) || items.length === 0) return res.json({ ok: true });
   try {
-    for (const l of items) {
-      await query(
-        `INSERT INTO lancamentos
-           (id, vencimento, descricao, natureza, parcela_atual, total_parcelas, valor, pago, mes, grupo_id, criado_por_id)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-         ON CONFLICT (id) DO NOTHING`,
-        [l.id, l.vencimento, l.descricao, l.natureza,
-         l.parcelaAtual, l.totalParcelas, l.valor, l.pago, l.mes, l.grupoId, l.criadoPorId ?? null]
+    // 🆕 Insere todas as parcelas em UM ÚNICO comando, em vez de um loop
+    // com uma consulta por parcela. Isso evita a situação em que algumas
+    // parcelas eram salvas e outras não caso algo desse errado no meio do
+    // caminho — agora ou salva tudo, ou nada (evita lançamento incompleto).
+    const colunas = 11;
+    const valoresSql: string[] = [];
+    const params: any[] = [];
+    items.forEach((l, i) => {
+      const base = i * colunas;
+      valoresSql.push(
+        `(${Array.from({ length: colunas }, (_, j) => `$${base + j + 1}`).join(",")})`
       );
-    }
+      params.push(
+        l.id, l.vencimento, l.descricao, l.natureza,
+        l.parcelaAtual, l.totalParcelas, l.valor, l.pago, l.mes, l.grupoId, l.criadoPorId ?? null
+      );
+    });
+
+    await query(
+      `INSERT INTO lancamentos
+         (id, vencimento, descricao, natureza, parcela_atual, total_parcelas, valor, pago, mes, grupo_id, criado_por_id)
+       VALUES ${valoresSql.join(",")}
+       ON CONFLICT (id) DO NOTHING`,
+      params
+    );
     return res.json({ ok: true });
   } catch (err) {
+    console.error("Erro ao criar lançamentos:", err);
     return res.status(500).json({ erro: String(err) });
   }
 });
