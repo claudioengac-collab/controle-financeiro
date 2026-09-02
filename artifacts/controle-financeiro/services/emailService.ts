@@ -11,11 +11,14 @@ interface DadosEmail {
 }
 
 function getApiUrl(): string {
-  // Na web: usa o hostname do browser, removendo ".expo." do meio
-  // Exemplo: abc.expo.janeway.replit.dev → abc.janeway.replit.dev
+  // 🆕 Mesma lógica do apiService.ts: no Render, a própria página repassa
+  // /api/* pro servidor de verdade — caminho relativo já basta.
+  if (typeof window !== "undefined" && window?.location?.hostname?.includes("onrender.com")) {
+    return "/api";
+  }
+  // Na web (esquema antigo do Replit): usa o hostname do browser, removendo ".expo." do meio
   if (typeof window !== "undefined" && window?.location?.hostname) {
     const h = window.location.hostname;
-    // Remove qualquer variação de ".expo." do hostname
     const root = h.includes(".expo.") ? h.replace(".expo.", ".") : h;
     return `https://${root}/api`;
   }
