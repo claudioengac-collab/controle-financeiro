@@ -20,6 +20,10 @@ services:
     name: controle-financeiro-app
     buildCommand: pnpm install --no-frozen-lockfile && export EXPO_PUBLIC_API_URL="https://${API_HOST}/api" && pnpm --filter @workspace/controle-financeiro exec expo export --platform web --output-dir static-build/web
     staticPublishPath: artifacts/controle-financeiro/static-build/web
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://controle-financeiro-api-wxls.onrender.com/api/*
     envVars:
       - key: API_HOST
         fromService:
