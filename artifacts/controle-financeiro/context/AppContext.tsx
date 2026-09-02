@@ -190,6 +190,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       id: gerarId(),
       criadoPorId: usuarioLogado?.id,
     }));
+    // 🆕 Sem try/catch aqui de propósito: se o servidor recusar, o erro
+    // sobe pra quem chamou (MainScreen), que agora espera essa promessa
+    // terminar antes de dizer "sucesso" pro usuário.
     await api.postLancamentos(newItems);
     setLancamentos((prev) => [...prev, ...newItems]);
 
