@@ -1,17 +1,13 @@
 import { Router } from "express";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 const router = Router();
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-const DESTINATARIOS = ["claudioeng.ac@gmail.com", "thamadylla@gmail.com"];
+// 🆕 Sem domínio próprio verificado no Resend, só dá pra mandar pro
+// e-mail usado pra criar a conta no Resend. Deixe esse único endereço aqui.
+const DESTINATARIOS = ["claudioeng.ac@gmail.com"];
 
 router.post("/email/notificar", async (req, res) => {
   try {
@@ -54,12 +50,20 @@ router.post("/email/notificar", async (req, res) => {
       </div>
     `;
 
-    await transporter.sendMail({
-      from: `"Controle Financeiro" <${process.env.GMAIL_USER}>`,
-      to: DESTINATARIOS.join(", "),
+    // 🆕 Resend em vez de SMTP/nodemailer — o Render bloqueia conexões
+    // SMTP tradicionais no plano grátis, mas isso aqui funciona por HTTPS,
+    // que nunca é bloqueado.
+    const { error } = await resend.emails.send({
+      from: "Controle Financeiro <onboarding@resend.dev>",
+      to: DESTINATARIOS,
       subject: `${titulo}: ${descricao} — ${valorFormatado}`,
       html,
     });
+
+    if (error) {
+      console.error("Erro ao enviar e-mail (Resend):", error);
+      return res.status(500).json({ ok: false, erro: error.message });
+    }
 
     res.json({ ok: true });
   } catch (err: any) {
