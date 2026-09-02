@@ -304,7 +304,7 @@ export function MainScreen() {
     );
   };
 
-  const handleLancar = () => {
+  const handleLancar = async () => {
     if (!descricao.trim()) {
       alerta("Atenção", "Informe a descrição do lançamento.");
       return;
@@ -343,13 +343,23 @@ export function MainScreen() {
       });
     }
     const mesPrimeiro = items[0].mes;
-    addLancamentos(items);
-    limparForm();
-    setMesSelecionado(mesPrimeiro);
-    if (totalParc > 1) {
+    // 🆕 Agora espera de verdade o servidor confirmar antes de dizer que deu
+    // certo — e mostra um erro de verdade pro usuário se algo falhar,
+    // em vez de fingir sucesso silenciosamente.
+    try {
+      await addLancamentos(items);
+      limparForm();
+      setMesSelecionado(mesPrimeiro);
+      if (totalParc > 1) {
+        alerta(
+          "Lançamento realizado!",
+          `${totalParc} parcelas criadas para os próximos meses.\nExibindo: ${getMesNome(mesPrimeiro)}.`
+        );
+      }
+    } catch (err) {
       alerta(
-        "Lançamento realizado!",
-        `${totalParc} parcelas criadas para os próximos meses.\nExibindo: ${getMesNome(mesPrimeiro)}.`
+        "Não foi possível salvar",
+        `O lançamento não foi salvo. Tente novamente.\n\nDetalhe: ${err instanceof Error ? err.message : String(err)}`
       );
     }
   };
