@@ -23,7 +23,7 @@ services:
     routes:
       - type: rewrite
         source: /api/*
-        destination: https://controle-financeiro-api-wxls.onrender.com/api/*
+        destination: https://controle-financeiro-api-wxls.onrender.com/api
     envVars:
       - key: API_HOST
         fromService:
