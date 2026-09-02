@@ -1,17 +1,17 @@
 // URL base da API — funciona em web, Android e iPhone
 export function getApiBase(): string {
-  // 🆕 Fora do Replit (Render, Vercel etc.), a URL da API vem de uma variável
-  // definida no momento do build do app: EXPO_PUBLIC_API_URL.
-  // Ex.: EXPO_PUBLIC_API_URL=https://seu-api.onrender.com/api
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL;
+  // 🆕 No Render, a própria página repassa (proxy) /api/* pro servidor de
+  // verdade — configurado direto no render.yaml. Por isso um caminho
+  // relativo já basta: nunca "cruza" pra outro site, então não tem como
+  // dar problema de conexão entre domínios diferentes.
+  if (typeof window !== "undefined" && window?.location?.hostname?.includes("onrender.com")) {
+    return "/api";
   }
 
-  // 🆕 Reforço: se o app estiver rodando no Render, usa o endereço direto e
-  // confiável da API, sem depender de nenhuma variável de ambiente ter
-  // "colado" certo durante o build. Evita ficar refém desse detalhe.
-  if (typeof window !== "undefined" && window?.location?.hostname?.includes("onrender.com")) {
-    return "https://controle-financeiro-api-wxls.onrender.com/api";
+  // Fora do Render (ex.: rodando localmente), ainda dá pra forçar um
+  // endereço específico via variável de ambiente, se precisar.
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
   }
 
   // Esquema antigo, específico do Replit (mantido pra quem ainda testa por lá)
