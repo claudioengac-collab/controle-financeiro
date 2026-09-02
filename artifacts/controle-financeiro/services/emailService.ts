@@ -11,10 +11,9 @@ interface DadosEmail {
 }
 
 function getApiUrl(): string {
-  // 🆕 Mesma lógica do apiService.ts: no Render, a própria página repassa
-  // /api/* pro servidor de verdade — caminho relativo já basta.
+  // No Render, usa o endereço direto e confiável da API (mesma lógica do apiService.ts).
   if (typeof window !== "undefined" && window?.location?.hostname?.includes("onrender.com")) {
-    return "/api";
+    return "https://controle-financeiro-api-wxls.onrender.com/api";
   }
   // Na web (esquema antigo do Replit): usa o hostname do browser, removendo ".expo." do meio
   if (typeof window !== "undefined" && window?.location?.hostname) {
