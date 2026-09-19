@@ -61,7 +61,10 @@ export function EditarModal({ visible, lancamento, onClose }: Props) {
     }
   }, [lancamento]);
 
+  const [salvando, setSalvando] = useState(false);
+
   const handleSalvar = async () => {
+    if (salvando) return;
     if (!descricao.trim()) {
       alerta("Atenção", "Informe a descrição.");
       return;
@@ -78,17 +81,24 @@ export function EditarModal({ visible, lancamento, onClose }: Props) {
     if (!lancamento) return;
     const [, mesVenc, anoVenc] = dataVenc.split("/");
     const novoMes = `${mesVenc}/${anoVenc}`;
-    await updateLancamento(lancamento.id, {
-      descricao: descricao.trim(),
-      valor: valorNum,
-      natureza,
-      totalParcelas: parseInt(parcelas) || 1,
-      vencimento: dataVenc,
-      mes: novoMes,
-    });
-    alerta("Sucesso", "Edição realizada com sucesso!", [
-      { texto: "OK", estilo: "normal", onPress: () => { setAlertaVis(false); onClose(); } },
-    ]);
+    setSalvando(true);
+    try {
+      await updateLancamento(lancamento.id, {
+        descricao: descricao.trim(),
+        valor: valorNum,
+        natureza,
+        totalParcelas: parseInt(parcelas) || 1,
+        vencimento: dataVenc,
+        mes: novoMes,
+      });
+      alerta("Sucesso", "Edição realizada com sucesso!", [
+        { texto: "OK", estilo: "normal", onPress: () => { setAlertaVis(false); onClose(); } },
+      ]);
+    } catch (err) {
+      alerta("Não foi possível salvar", err instanceof Error ? err.message : String(err));
+    } finally {
+      setSalvando(false);
+    }
   };
 
   return (
@@ -207,8 +217,12 @@ export function EditarModal({ visible, lancamento, onClose }: Props) {
               </View>
 
               <View style={styles.btnRow}>
-                <TouchableOpacity style={[styles.btn, styles.btnSalvar]} onPress={handleSalvar}>
-                  <Text style={styles.btnText}>SALVAR</Text>
+                <TouchableOpacity
+                  style={[styles.btn, styles.btnSalvar, salvando && { opacity: 0.5 }]}
+                  onPress={handleSalvar}
+                  disabled={salvando}
+                >
+                  <Text style={styles.btnText}>{salvando ? "SALVANDO..." : "SALVAR"}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.btn, styles.btnCancelar]} onPress={onClose}>
                   <Text style={styles.btnText}>CANCELAR</Text>
