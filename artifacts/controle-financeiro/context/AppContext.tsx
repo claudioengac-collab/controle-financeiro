@@ -108,11 +108,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        const [users, lancs, arquivados, lixeira, sessaoId] = await Promise.all([
+        // 🆕 Carrega só o necessário pra decidir a tela inicial (login ou
+        // "primeiro acesso"). Lançamentos, arquivo e lixeira ficam pra
+        // depois do login — ninguém precisa disso só pra ver a tela de
+        // entrar, e isso deixa a abertura do app mais rápida.
+        const [users, sessaoId] = await Promise.all([
           api.getUsuarios(),
-          api.getLancamentos(),
-          api.getLancamentosArquivados(),
-          api.getLancamentosLixeira(),
           AsyncStorage.getItem(CHAVE_SESSAO),
         ]);
 
@@ -124,9 +125,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }));
 
         setUsuarios(usuariosMapped);
-        setLancamentos(lancs.map(mapLancamento));
-        setLancamentosArquivados(arquivados.map(mapLancamento));
-        setLancamentosLixeira(lixeira.map(mapLancamento));
 
         if (sessaoId) {
           const user = usuariosMapped.find((u) => u.id === sessaoId);
@@ -139,6 +137,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     })();
   }, []);
+
+  // 🆕 Assim que alguém está logado (seja por login manual ou sessão
+  // restaurada automaticamente), busca os lançamentos, arquivo e lixeira.
+  useEffect(() => {
+    if (!usuarioLogado) return;
+    (async () => {
+      try {
+        const [lancs, arquivados, lixeira] = await Promise.all([
+          api.getLancamentos(),
+          api.getLancamentosArquivados(),
+          api.getLancamentosLixeira(),
+        ]);
+        setLancamentos(lancs.map(mapLancamento));
+        setLancamentosArquivados(arquivados.map(mapLancamento));
+        setLancamentosLixeira(lixeira.map(mapLancamento));
+      } catch (err) {
+        console.error("Erro ao carregar lançamentos:", err);
+      }
+    })();
+  }, [usuarioLogado?.id]);
 
   // ── Autenticação ──────────────────────────────────────────────────────────
   // Validado no servidor agora (POST /auth/login) — o app nunca mais compara
