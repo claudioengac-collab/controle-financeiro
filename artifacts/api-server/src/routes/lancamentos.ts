@@ -117,14 +117,30 @@ router.post("/lancamentos", async (req, res) => {
 router.put("/lancamentos/:id", async (req, res) => {
   const { vencimento, descricao, natureza, parcelaAtual, totalParcelas, valor, pago, mes, grupoId } = req.body;
   try {
-    await query(
+    // 🆕 Usa COALESCE: se o app não mandar um campo (ex.: parcelaAtual,
+    // pago, grupoId — a tela de editar não envia esses), mantém o valor
+    // que já estava salvo em vez de apagar (zerar). Antes, editar QUALQUER
+    // lançamento quebrava com "violates not-null constraint" por causa
+    // disso.
+    const result = await query(
       `UPDATE lancamentos SET
-         vencimento=$1, descricao=$2, natureza=$3, parcela_atual=$4,
-         total_parcelas=$5, valor=$6, pago=$7, mes=$8, grupo_id=$9,
+         vencimento=COALESCE($1, vencimento),
+         descricao=COALESCE($2, descricao),
+         natureza=COALESCE($3, natureza),
+         parcela_atual=COALESCE($4, parcela_atual),
+         total_parcelas=COALESCE($5, total_parcelas),
+         valor=COALESCE($6, valor),
+         pago=COALESCE($7, pago),
+         mes=COALESCE($8, mes),
+         grupo_id=COALESCE($9, grupo_id),
          atualizado_em = now()
-       WHERE id=$10`,
+       WHERE id=$10
+       RETURNING id`,
       [vencimento, descricao, natureza, parcelaAtual, totalParcelas, valor, pago, mes, grupoId, req.params.id]
     );
+    if (result.length === 0) {
+      return res.status(404).json({ erro: "Lançamento não encontrado" });
+    }
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ erro: String(err) });
