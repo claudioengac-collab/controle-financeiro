@@ -71,6 +71,7 @@ export function MainScreen() {
   const [natureza, setNatureza] = useState<Natureza>("DESPESA");
   const [parcelas, setParcelas] = useState("1");
   const [dataVenc, setDataVenc] = useState("");
+  const [salvandoLancamento, setSalvandoLancamento] = useState(false);
   const [formVisible, setFormVisible] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [fluxosPeriodo, setFluxosPeriodo] = useState(false);
@@ -305,6 +306,9 @@ export function MainScreen() {
   };
 
   const handleLancar = async () => {
+    // 🆕 Trava contra clique duplo: se já está salvando, ignora qualquer
+    // novo toque até o pedido anterior terminar.
+    if (salvandoLancamento) return;
     if (!descricao.trim()) {
       alerta("Atenção", "Informe a descrição do lançamento.");
       return;
@@ -343,9 +347,7 @@ export function MainScreen() {
       });
     }
     const mesPrimeiro = items[0].mes;
-    // 🆕 Agora espera de verdade o servidor confirmar antes de dizer que deu
-    // certo — e mostra um erro de verdade pro usuário se algo falhar,
-    // em vez de fingir sucesso silenciosamente.
+    setSalvandoLancamento(true);
     try {
       await addLancamentos(items);
       limparForm();
@@ -361,6 +363,8 @@ export function MainScreen() {
         "Não foi possível salvar",
         `O lançamento não foi salvo. Tente novamente.\n\nDetalhe: ${err instanceof Error ? err.message : String(err)}`
       );
+    } finally {
+      setSalvandoLancamento(false);
     }
   };
 
@@ -687,10 +691,13 @@ export function MainScreen() {
                 <View style={{ width: 10 }} />
                 <View style={styles.lancarBtns}>
                   <TouchableOpacity
-                    style={styles.btnLancar}
+                    style={[styles.btnLancar, salvandoLancamento && { opacity: 0.5 }]}
                     onPress={handleLancar}
+                    disabled={salvandoLancamento}
                   >
-                    <Text style={styles.btnLancarText}>LANÇAR</Text>
+                    <Text style={styles.btnLancarText}>
+                      {salvandoLancamento ? "SALVANDO..." : "LANÇAR"}
+                    </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.btnLimpar}
@@ -785,7 +792,7 @@ export function MainScreen() {
                         {getMesNome(item.mes)}
                       </Text>
                       <Text style={[styles.td, { width: 74, fontSize: 11, color: "#9AA3AF" }]}>{item.vencimento}</Text>
-                      <Text style={[styles.td, { flex: 1, minWidth: 130, color: "#9AA3AF" }]}>{item.descricao}</Text>
+                      <Text style={[styles.td, { flex: 1, minWidth: 130, maxWidth: 220, color: "#9AA3AF" }]}>{item.descricao}</Text>
                       <Text style={[styles.td, { width: 46, fontSize: 10, color: "#9AA3AF" }]} numberOfLines={1}>
                         {item.natureza === "RECEITA" ? "REC." : "DESP."}
                       </Text>
@@ -851,7 +858,7 @@ export function MainScreen() {
                         {getMesNome(item.mes)}
                       </Text>
                       <Text style={[styles.td, { width: 74, fontSize: 11 }]}>{item.vencimento}</Text>
-                      <Text style={[styles.td, { flex: 1, minWidth: 130 }]}>{item.descricao}</Text>
+                      <Text style={[styles.td, { flex: 1, minWidth: 130, maxWidth: 220 }]}>{item.descricao}</Text>
                       <Text
                         style={[
                           styles.td,
@@ -917,7 +924,7 @@ export function MainScreen() {
                         {getMesNome(item.mes)}
                       </Text>
                       <Text style={[styles.td, { width: 74, fontSize: 11 }]}>{item.vencimento}</Text>
-                      <Text style={[styles.td, { flex: 1, minWidth: 130 }]}>{item.descricao}</Text>
+                      <Text style={[styles.td, { flex: 1, minWidth: 130, maxWidth: 220 }]}>{item.descricao}</Text>
                       <Text
                         style={[
                           styles.td,
